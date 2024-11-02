@@ -1,0 +1,81 @@
+Create Collections for Rooms, Guests, and Reservations:
+
+CREATE TABLE Rooms (
+    RoomID SERIAL PRIMARY KEY,
+    Type VARCHAR(50),
+    Price DECIMAL(10, 2),
+    Availability BOOLEAN
+);
+
+CREATE TABLE Guests (
+    GuestID SERIAL PRIMARY KEY,
+    Name VARCHAR(100),
+    ContactInformation VARCHAR(100)
+);
+
+CREATE TABLE Reservations (
+    ReservationID SERIAL PRIMARY KEY,
+    GuestID INT REFERENCES Guests(GuestID),
+    RoomID INT REFERENCES Rooms(RoomID),
+    CheckInDate DATE,
+    CheckOutDate DATE,
+    Status VARCHAR(50) -- 'Confirmed' or 'Canceled'
+);
+
+CREATE TABLE Payments (
+    PaymentID SERIAL PRIMARY KEY,
+    ReservationID INT REFERENCES Reservations(ReservationID),
+    Amount DECIMAL(10, 2),
+    PaymentDate DATE,
+    PaymentMethod VARCHAR(50)
+);
+
+Insert Rooms with Details:
+INSERT INTO Rooms (Type, Price, Availability) VALUES
+('Single', 100.00, TRUE),
+('Double', 150.00, TRUE),
+('Suite', 250.00, TRUE);
+
+Query to Select All Available Rooms for a Specific Date Range:
+SELECT * FROM Rooms
+WHERE Availability = TRUE AND RoomID NOT IN (
+    SELECT RoomID FROM Reservations
+    WHERE (CheckInDate < :checkOutDate AND CheckOutDate > :checkInDate)
+);
+
+Update Room Availability When a Reservation is Made:
+UPDATE Rooms
+SET Availability = FALSE
+WHERE RoomID = :roomID;
+
+Delete Reservations That Have Been Canceled:
+DELETE FROM Reservations
+WHERE Status = 'Canceled';
+
+Filter Rooms Based on Type and Price Range:
+
+SELECT * FROM Rooms
+WHERE Type = :type AND Price BETWEEN :minPrice AND :maxPrice;
+
+Use AND/OR to Find Rooms by Type and Price Range:
+SELECT * FROM Rooms
+WHERE (Type = :type1 OR Type = :type2) AND Price BETWEEN :minPrice AND :maxPrice;
+
+Sort Rooms by Price in Ascending Order:
+SELECT * FROM Rooms
+ORDER BY Price ASC;
+
+Use Aggregate Functions to Calculate the Total Revenue from Reservations:
+
+SELECT SUM(Amount) AS TotalRevenue FROM Payments;
+
+Group Reservations by Room Type and Calculate the Total Number of Reservations for Each Room Type:
+
+SELECT r.Type, COUNT(rz.ReservationID) AS TotalReservations
+FROM Rooms r
+LEFT JOIN Reservations rz ON r.RoomID = rz.RoomID
+GROUP BY r.Type;
+
+
+
+

@@ -1,0 +1,357 @@
+1.Creating Collections
+//Employees
+db.createCollection("Employees1", {
+    validator: {
+        $jsonSchema: {
+            bsonType: "object", 
+            required: [         
+                "EmployeeID",
+                "FirstName",
+                "LastName",
+                "DateOfBirth",
+                "Department"
+            ],
+            properties: {      
+                EmployeeID: {
+                    bsonType: "int",
+                    description: "must be an integer and is required"
+                },
+                FirstName: {
+                    bsonType: "string", 
+                    description: "must be a string and is required"
+                },
+                LastName: {
+                    bsonType: "string", 
+                    description: "must be a string and is required"
+                },
+                DateOfBirth: {
+                    bsonType: "date", 
+                    description: "must be a date and is required"
+                },
+                Department: {
+                    bsonType: "string", 
+                    description: "must be a string and is required"
+                }
+            }
+        }
+    }
+});
+
+//Orders
+
+db.createCollection("Orders", {
+    validator: {
+        $jsonSchema: {
+            bsonType: "object", // Type of the document
+            required: [         // Required fields
+                "OrderID",
+                "OrderDate",
+                "CustomerID",
+                "Amount"
+            ],
+            properties: {       // Define each field's properties
+                OrderID: {
+                    bsonType: "int", // Type of OrderID
+                    description: "must be an integer and is required"
+                },
+                OrderDate: {
+                    bsonType: "date", // Type of OrderDate
+                    description: "must be a date and is required"
+                },
+                CustomerID: {
+                    bsonType: "string", // Type of CustomerID
+                    description: "must be a string and is required"
+                },
+                Amount: {
+                    bsonType: "double", // Type of Amount
+                    description: "must be a double and is required"
+                }
+            }
+        }
+    }
+});
+
+
+2. Inserting Data into Collections
+//Employees
+db.Employees1.insertOne({
+    EmployeeID: 1,
+    FirstName: 'Alice',
+    LastName: 'Johnson',
+    DateOfBirth: new Date('1990-01-15'), // Ensure the date is in Date format
+    Department: 'HR'
+});
+//Orders
+db.Orders.insertMany([
+    {
+        OrderID: 1,
+        OrderDate: new Date("2000-11-26"),
+        CustomerID: 16,
+        Amount: 150.00
+    },
+    {
+        OrderID: 2,
+        OrderDate: new Date("2011-08-27"),
+        CustomerID: 17,
+        Amount: 190.54
+    },
+    {
+        OrderID: 3,
+        OrderDate: new Date("2014-12-28"),
+        CustomerID: 18,
+        Amount: 566.90
+    },
+    {
+        OrderID: 4,
+        OrderDate: new Date("2005-10-19"),
+        CustomerID: 19,
+        Amount: 500.34
+    },
+    {
+        OrderID: 5,
+        OrderDate: new Date("2004-05-27"),
+        CustomerID: 10,
+        Amount: 233.44
+    }
+]);
+3. Selecting Data from Collections
+db.Employees.find().pretty();
+db.Orders.find().pretty();
+db.Employees.find({}, { FirstName: 1, LastName: 1 }).pretty();
+db.Orders.find({}, { OrderID: 1, Amount: 1 }).pretty();
+
+4. Updating Data in a Collection
+db.Employees.updateOne(
+    { EmployeeID: 1 }, // Filter to find the employee
+    { $set: { Department: 'Finance' } } // Update operation to set new Department
+);
+db.Orders.updateOne(
+    { OrderID: 2 }, // Filter to find the order
+    { $set: { Amount: 500.00 } } // Update operation to set new Amount
+);
+
+5. Deleting Data from a Collection
+db.Employees.deleteOne({ EmployeeID: 1 }); // Filter to find the employee to delete
+db.Orders.deleteMany({ Amount: { $lt: 100 } }); // Filter to delete orders with Amount less than 100
+
+6.Filtering Data with WHERE Clause
+db.Employees.find({ Department: 'HR' }).pretty();
+db.Orders.find({ Amount: { $gt: 300 } }).pretty();
+
+7. Using AND / OR in Queries
+db.Employees.find({
+    Department: 'HR',
+    DateOfBirth: { $gt: new Date('1990-01-01') } // Check if DateOfBirth is greater than the specified date
+}).pretty();
+
+db.Orders.find({
+    Amount: { $gt: 300 }, // Check if Amount is greater than 300
+    OrderDate: { $lt: new Date('2023-01-01') } // Check if OrderDate is less than January 1, 2023
+}).pretty();
+
+db.Employees.find({
+    $or: [
+        { Department: 'HR' },
+        { Department: 'Finance' }
+    ]
+}).pretty();
+
+db.Orders.find({
+    $or: [
+        { Amount: { $lt: 100 } }, // Check if Amount is less than 100
+        { OrderDate: { $gt: new Date('2023-01-01') } } // Check if OrderDate is greater than January 1, 2023
+    ]
+}).pretty();
+
+8. Sorting Results with ORDER BY
+
+db.Employees.find().sort({ LastName: 1 }).pretty();
+db.Orders.find().sort({ Amount: -1 }).pretty();
+
+9. Using Aggregate Functions
+
+db.Employees.countDocuments
+db.Orders.countDocuments();
+db.Orders.aggregate([
+    {
+        $group: {
+            _id: null, // Grouping all documents together
+            averageAmount: { $avg: "$Amount" } // Calculating the average of the Amount field
+        }
+    }
+]);
+
+db.Employees.aggregate([
+    {
+        $project: {
+            age: {
+                $floor: {
+                    $divide: [
+                        { $subtract: [new Date(), "$DateOfBirth"] }, // Difference in milliseconds
+                        1000 * 60 * 60 * 24 * 365.25 // Convert milliseconds to years
+                    ]
+                }
+            }
+        }
+    },
+    {
+        $group: {
+            _id: null, // Grouping all documents together
+            averageAge: { $avg: "$age" } // Calculating the average age
+        }
+    }
+]);
+
+10. Grouping Data with GROUP BY
+
+db.Employees.aggregate([
+    {
+        $group: {
+            _id: "$Department", // Grouping by Department
+            employeeCount: { $sum: 1 } // Counting the number of employees in each department
+        }
+    }
+]);
+
+db.Orders.aggregate([
+    {
+        $group: {
+            _id: "$CustomerID", // Grouping by CustomerID
+            totalAmount: { $sum: "$Amount" } // Summing the Amount for each CustomerID
+        }
+    }
+]);
+11. Using HAVING Clause
+
+
+db.Employees.aggregate([
+    {
+        $group: {
+            _id: "$Department",             // Group by the Department field
+            employeeCount: { $sum: 1 }      // Count the number of employees in each department
+        }
+    },
+    {
+        $match: {
+            employeeCount: { $gt: 5 }       // Filter departments with more than 5 employees
+        }
+    },
+    {
+        $project: {
+            _id: 0,                          // Exclude the _id field from the output
+            Department: "$_id",              // Include the Department name
+            employeeCount: 1                 // Include the employee count
+        }
+    }
+]);
+
+
+
+db.Orders.aggregate([
+    {
+        $group: {
+            _id: "$CustomerID",                  // Group by CustomerID
+            totalAmount: { $sum: "$Amount" }     // Sum the Amount for each CustomerID
+        }
+    },
+    {
+        $match: {
+            totalAmount: { $gt: 1000 }            // Filter for totalAmount greater than 1000
+        }
+    },
+    {
+        $project: {
+            _id: 0,                               // Exclude the _id field from the output
+            CustomerID: "$_id",                   // Include CustomerID
+            totalAmount: 1                         // Include the totalAmount
+        }
+    }
+]);
+
+
+
+12. Joining Collections
+
+
+db.Employees.aggregate([
+    {
+        $lookup: {
+            from: "Orders",                      // The collection to join with
+            localField: "EmployeeID",            // Field from Employees
+            foreignField: "CustomerID",          // Field from Orders
+            as: "orders"                         // Name of the output array
+        }
+    },
+    {
+        $unwind: "$orders"                       // Flatten the orders array
+    },
+    {
+        $project: {
+            FirstName: 1,                       // Include FirstName
+            LastName: 1,                        // Include LastName
+            Amount: "$orders.Amount"            // Include the Amount from the joined orders
+        }
+    }
+]);
+
+
+
+
+db.Employees.aggregate([
+    {
+        $lookup: {
+            from: "Orders",                      // The collection to join with
+            localField: "EmployeeID",            // Field from Employees
+            foreignField: "CustomerID",          // Field from Orders
+            as: "orders"                         // Name of the output array
+        }
+    },
+    {
+        $project: {
+            FirstName: 1,                       // Include FirstName
+            LastName: 1,                        // Include LastName
+            Amount: { $arrayElemAt: ["$orders.Amount", 0] } // Get the first order amount, if any
+        }
+    }
+]);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
